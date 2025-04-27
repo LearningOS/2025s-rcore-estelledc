@@ -4,6 +4,8 @@
 //!
 //! `UPSafeCell<OSInodeInner>` -> `OSInode`: for static `ROOT_INODE`,we
 //! need to wrap `OSInodeInner` into `UPSafeCell`
+// use core::any::Any;
+
 use super::{File, Stat, StatMode};
 use crate::drivers::BLOCK_DEVICE;
 use crate::mm::UserBuffer;
@@ -103,6 +105,30 @@ impl OpenFlags {
     }
 }
 
+/// Open a file
+pub fn open_file(name: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
+    let (readable, writable) = flags.read_write();
+    if flags.contains(OpenFlags::CREATE) {
+        if let Some(inode) = ROOT_INODE.find(name) {
+            // clear size
+            inode.clear();
+            Some(Arc::new(OSInode::new(readable, writable, inode)))
+        } else {
+            // create file
+            ROOT_INODE
+                .create(name)
+                .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
+        }
+    } else {
+        ROOT_INODE.find(name).map(|inode| {
+            if flags.contains(OpenFlags::TRUNC) {
+                inode.clear();
+            }
+            Arc::new(OSInode::new(readable, writable, inode))
+        })
+    }
+}
+
 /// link
 pub fn link(old_path: &str, new_path: &str) -> bool {
     let inode = ROOT_INODE.find(old_path);
@@ -127,31 +153,6 @@ pub fn unlink(path: &str) -> bool {
         return true;
     }
     false
-}
-
-
-/// Open a file
-pub fn open_file(name: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
-    let (readable, writable) = flags.read_write();
-    if flags.contains(OpenFlags::CREATE) {
-        if let Some(inode) = ROOT_INODE.find(name) {
-            // clear size
-            inode.clear();
-            Some(Arc::new(OSInode::new(readable, writable, inode)))
-        } else {
-            // create file
-            ROOT_INODE
-                .create(name)
-                .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
-        }
-    } else {
-        ROOT_INODE.find(name).map(|inode| {
-            if flags.contains(OpenFlags::TRUNC) {
-                inode.clear();
-            }
-            Arc::new(OSInode::new(readable, writable, inode))
-        })
-    }
 }
 
 impl File for OSInode {
@@ -185,6 +186,7 @@ impl File for OSInode {
         }
         total_write_size
     }
+
     fn stat(&self) -> Stat {
         let inner = self.inner.exclusive_access();
         Stat::new(

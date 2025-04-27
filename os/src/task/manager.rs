@@ -12,7 +12,7 @@ pub struct TaskManager {
 
 // #[derive(Debug)]
 pub struct StrideTask(Arc<TaskControlBlock>);
- 
+
 impl PartialOrd for StrideTask {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))

@@ -1,6 +1,7 @@
 //! Types related to task management & Functions for completely changing TCB
 use super::TaskContext;
 use super::{kstack_alloc, pid_alloc, KernelStack, PidHandle};
+// use crate::config::TRAP_CONTEXT_BASE;
 use crate::config::{BIG_STRIDE, TRAP_CONTEXT_BASE};
 use crate::fs::{File, Stdin, Stdout};
 use crate::mm::{MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
@@ -9,7 +10,7 @@ use crate::trap::{trap_handler, TrapContext};
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::{Ref,RefMut};
+use core::cell::{Ref, RefMut};
 
 /// Task control block structure
 ///
@@ -36,7 +37,6 @@ impl TaskControlBlock {
     pub fn inner(&self) -> Ref<'_, TaskControlBlockInner> {
         self.inner.access()
     }
-
     /// Get the address of app's page table
     pub fn get_user_token(&self) -> usize {
         let inner = self.inner_exclusive_access();
@@ -163,7 +163,7 @@ impl TaskControlBlock {
                     program_brk: user_sp,
                     stride: 0,
                     priority: 16,
-                    pass: BIG_STRIDE / 16, 
+                    pass: BIG_STRIDE / 16,
                 })
             },
         };
@@ -205,6 +205,7 @@ impl TaskControlBlock {
         *inner.get_trap_cx() = trap_cx;
         // **** release current PCB
     }
+
     /// spawn a elf
     pub fn spawn(self: &Arc<Self>, elf_data: &[u8]) -> Arc<Self> {
         // ---- access parent PCB exclusively

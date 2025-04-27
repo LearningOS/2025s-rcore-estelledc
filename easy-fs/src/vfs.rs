@@ -204,6 +204,7 @@ impl Inode {
         });
         block_cache_sync_all();
     }
+
     /// 创建硬链接
     pub fn create_link(&self, inode: &Inode, new_name: &str) -> bool {
         let mut fs = self.fs.lock();
@@ -231,7 +232,9 @@ impl Inode {
         });
         true
     }
-    
+
+    // ch2b_hello_world
+
     /// 删除链接
     pub fn unlink(&self) -> bool {
         let should_dealloc = self.modify_disk_inode(|disk_inode| {

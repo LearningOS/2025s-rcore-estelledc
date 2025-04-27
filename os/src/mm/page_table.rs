@@ -223,12 +223,6 @@ pub fn translated_refmut<T>(token: usize, ptr: *mut T) -> &'static mut T {
         .get_mut()
 }
 
-/// An abstraction over a buffer passed from user space to kernel space
-pub struct UserBuffer {
-    /// A list of buffers
-    pub buffers: Vec<&'static mut [u8]>,
-}
-
 /// Translate const u8 to
 pub fn translated_single<T>(token: usize, ptr: usize, rd: usize) -> Option<&'static mut T> {
     let page_table = PageTable::from_token(token);
@@ -253,6 +247,11 @@ pub fn translated_single<T>(token: usize, ptr: usize, rd: usize) -> Option<&'sta
     let phys_addr = PhysAddr::from(PhysAddr::from(ppn).0 + va.page_offset());
 
     Some(phys_addr.get_mut())
+}
+/// An abstraction over a buffer passed from user space to kernel space
+pub struct UserBuffer {
+    /// A list of buffers
+    pub buffers: Vec<&'static mut [u8]>,
 }
 
 impl UserBuffer {
