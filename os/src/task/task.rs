@@ -2,6 +2,7 @@
 
 use super::id::TaskUserRes;
 use super::{kstack_alloc, KernelStack, ProcessControlBlock, TaskContext};
+// use crate::sync::RES_MANAGER;
 use crate::trap::TrapContext;
 use crate::{mm::PhysPageNum, sync::UPSafeCell};
 use alloc::sync::{Arc, Weak};
@@ -65,6 +66,15 @@ impl TaskControlBlock {
         let trap_cx_ppn = res.trap_cx_ppn();
         let kstack = kstack_alloc();
         let kstack_top = kstack.get_top();
+
+        let process_inner = process.inner_exclusive_access();
+        let mut res_mgr = process_inner.res_manager.exclusive_access();
+
+        let tid = res.tid;
+        res_mgr.add_thread(tid);
+        drop(res_mgr);
+        drop(process_inner);
+
         Self {
             process: Arc::downgrade(&process),
             kstack,
